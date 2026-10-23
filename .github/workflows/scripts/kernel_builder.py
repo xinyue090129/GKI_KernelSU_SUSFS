@@ -10,6 +10,11 @@ from config import (BuildConfig, KSU_REPO_CONFIG, SUSFS_REPO_CONFIG, SUKISU_PATC
                    ANYKERNEL_CONFIG, KERNEL_PATCHES_CONFIG, BBG_CONFIG, TOOLCHAIN_CONFIG,
                    LEGACY_FIXES, OP8E_PATCH_URL, KPM_PATCH_URL)
 
+# DroidSpaces kABI fixes (required for Redmi Note 12 Turbo / marble 5.10.236 and below-kernel-6.12 GKI)
+# Source: https://github.com/ravindu644/Droidspaces-OSS
+DROIDSPACES_SYSVIPC_PATCH_URL = "https://raw.githubusercontent.com/ravindu644/Droidspaces-OSS/main/Documentation/resources/kernel-patches/GKI/below-kernel-6.12/001.GKI-below-6.12-fix_sysvipc_kabi_6_7_8.patch"
+DROIDSPACES_MQUEUE_PATCH_URL = "https://raw.githubusercontent.com/ravindu644/Droidspaces-OSS/main/Documentation/resources/kernel-patches/GKI/below-kernel-6.12/002.5.10_or_lower_use_android_abi_padding_for_posix_mqueue.patch"
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -230,6 +235,15 @@ CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
             common_dir = self.work_dir / "common"
             self._chdir(common_dir)
             self._run_cmd(f"curl -LSs {LEGACY_FIXES['android12-5.10-below-136']['url']} | patch -p1", check=False)
+            self._chdir(self.work_dir)
+
+        # DroidSpaces kABI fixes for android12-5.10 GKI (sub-level >= 136, e.g. marble 5.10.236)
+        # Keeps SYSVIPC / POSIX_MQUEUE KMI aligned with stock so vendor_dlkm loads (prevents bootloop)
+        if av == "android12" and kv == "5.10" and sub and sub >= 136:
+            common_dir = self.work_dir / "common"
+            self._chdir(common_dir)
+            self._run_cmd(f"curl -LSs {DROIDSPACES_SYSVIPC_PATCH_URL} | patch -p1", check=False)
+            self._run_cmd(f"curl -LSs {DROIDSPACES_MQUEUE_PATCH_URL} | patch -p1", check=False)
             self._chdir(self.work_dir)
 
     def add_kernel_supatch(self):
