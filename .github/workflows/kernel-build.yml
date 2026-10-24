@@ -171,6 +171,9 @@ jobs:
           [ -z "${{ github.event.inputs.custom_version }}" ] || ARGS="$ARGS --custom-version=${{ github.event.inputs.custom_version }}"
           [ "${{ github.event.inputs.make_release }}" = "true" ] || ARGS="$ARGS --no-release"
 
+          # Suppress harmless unused-label/unused-variable warnings from SUSFS patches
+          export KCFLAGS="-Wno-error=unused-label -Wno-error=unused-variable"
+
           python3 build.py $ARGS
 
       - name: Prepare artifacts
